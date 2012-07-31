@@ -16,12 +16,14 @@ Commands implemented:
     RETR
     PORT
     PASV
+    NLIST
 
 Commands from the unix ftp client: 
     ls
     cd
     put
     get
+    nlist
 
 Known problems: 
     Progress bar for file upload:

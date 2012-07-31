@@ -5,11 +5,14 @@ import pprint
 from dropbox import session
 import os
 import async_rest
+from optparse import OptionParser
+
+debugMode = False
 
 
 def log(msg):
-    return
-    print msg
+    if debugMode:
+        print msg
 
 
 class ServerError(Exception):
@@ -265,13 +268,13 @@ def cmd(requireAuth=True):
     """ Decorator for all the FTP commands. Handles auth, responses and
     failures """
     def decorate(f):
-        def wrapper(self, *args):
+        def wrapper(self, *args, **kwargs):
             if requireAuth and (not self.authenticated or not self.db_client):
                 self.respond("520 Not authenticated. ")
                 return
 
             try:
-                return f(self, *args)
+                return f(self, *args, **kwargs)
             except FsError as e:
                 self.respond("550 " + e.args[0])
             except ServerError as e:
@@ -469,27 +472,34 @@ class FTPHandler(asynchat.async_chat):
         self.respond("200 Type set to binary")
 
     @cmd()
-    def ftp_LIST(self, path=None, listall=True):
+    def ftp_NLST(self, path=None):
+        self.ftp_LIST(path=path, onlyNames=True)
 
-        def get_data_from_md(md):
+    @cmd()
+    def ftp_LIST(self, path=None, listall=True, onlyNames=False):
+
+        def get_data_from_md(md, onlyName=False):
                 """ Returns ftp data from db metadata """
-                params = {}
                 name = os.path.basename(md['path'])
-                params['type'] = 'dir' if (md['is_dir']) else 'file'
-                # TODO: parse the other params as well.
-                #params['size'] = f['size']
-                #params['modify'] = f['modified']
-                paramstring = ''.join(["%s=%s;" % (x, params[x]) \
-                                  for x in params.keys()])
-                data = '%s %s\r\n' % (paramstring, name)
-                return data
+                if onlyName:
+                    return str(name) + '\r\n'
+                else:
+                    params = {}
+                    params['type'] = 'dir' if (md['is_dir']) else 'file'
+                    # TODO: parse the other params as well.
+                    params['size'] = md['bytes']
+                    #params['modify'] = md['modified']
+                    paramstring = ''.join(["%s=%s;" % (x, params[x]) \
+                                      for x in params.keys()])
+                    data = '%s %s\r\n' % (paramstring, name)
+                    return data
 
         @resp_dec(self)
         def list_callback(resp):
             data = ''
             if 'contents' in resp:
                 for f in resp['contents']:
-                    data = data + get_data_from_md(f)
+                    data = data + get_data_from_md(f, onlyName=onlyNames)
             else:
                 data = get_data_from_md(resp)
             self.push_data(data.encode('utf-8'))
@@ -600,4 +610,8 @@ def main():
     server.serve_forever()
 
 if __name__ == "__main__":
+    parser = OptionParser()
+    (options, args) = parser.parse_args()
+    if 'debug' in args:
+        debugMode = True
     main()
