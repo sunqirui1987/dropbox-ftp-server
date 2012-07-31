@@ -3,7 +3,7 @@ Authentication:
     with the FTP server. This will be in the form of <accesstoken>:<accesskey>
 
 Usage: 
-    sudo python server.py
+    sudo python server.py [debug]
 
 Commands implemented: 
     MLSD
