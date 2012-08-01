@@ -40,9 +40,9 @@ Known problems:
         the issues caused by ssl, it was too late to change my implementation to use the twisted
         module or switching over to nodejs. The problems are mentioned below: 
         
-        - There is no implementation to make SSL handshakes asynchronous:
+        - There is no python implementation to make SSL handshakes asynchronous:
             After receiving an async TCP handshake, I had to do a blocking SSL handshake. 
-            This affects the throughput of the system when it is making several requests to dropbox
+            This affects the throughput of the system when it is making several requests to dropbox.
 
         - Large get requests (List specifically) are slow:
             Another issue I hit with SSL sockets was that the select.select() method never called
@@ -55,4 +55,13 @@ Known problems:
 
     FTP response codes might not be correct:
         Even though mostly the first 2 digits will be correct, the complete response codes
-        might not be. I put in whatever I could find.  
+        might not be. I put in whatever I could find. 
+
+Features I planned on implementing: 
+    Timeouts: 
+        Currently there are no timeouts on any socket requests. It works fine and doesn't slow down the server 
+        since all the sockets are non blocking. But might result in sockets being open for long periods. Also, 
+        the ssl handshake happens on a blocking socket. It would be better to just put a non zero timeout there instead. 
+    Better exception handling and messaging: 
+        For some cases, I just send back generic responses. 
+        Some places exception handling is not solid and there is room for exceptions to be not handled gracefully
